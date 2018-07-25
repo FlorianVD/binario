@@ -85,7 +85,14 @@ class Solver{
     }
 
     solve(){
-
+        if(this.i > 100){
+            alert("Ik ben nog niet slim genoeg. Fix me!");
+            console.log("Game grid");
+            console.table(this.game);
+            console.log("Game copy");
+            console.table(this.copy);
+            return;
+        }
         this.solveGame();
         console.log("Na solveSimple");
         console.table(this.game);
@@ -117,6 +124,7 @@ class Solver{
                 }
             }
             else{
+                this.i++;
                 console.log("Niet geldig, opnieuw proberen");
                 this.revertGameGrid();
                 this.makeGuess("1");
