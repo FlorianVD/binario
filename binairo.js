@@ -9,16 +9,42 @@ $(document).ready(function(){
     $('.btnOplossen').click(function(){
         $('.row').each(function(i){
             $('.row.' + i).children().each(function(j, val){
+            
             let value = $(val).val();
             grid[i][j] = value;
             });
         });
 
-        solver = new Solver(grid);
+        solver = new Solver(grid, $('#cols').val(),$('#rows').val());
 
         solver.solve();
         
         show(solver.game);
+    });
+
+    $('#btnGen').click(function(){
+        let rows = $('#rows').val();
+        let cols = $('#cols').val();
+
+        grid = [];
+        for(let i = 0; i < rows; i++){
+            grid.push([]);
+            for(let j = 0; j < cols; j++){
+                grid[i].push(null);
+            }
+        }
+
+        let html = "";
+        for(let i = 0; i < rows; i++){
+            html += '<div class="row '+i+'" >'
+            for(let j = 0; j < cols; j++){
+                html += '<input type="text" name="" id="" class="col">';
+            }
+            html += "</div>";
+        }
+
+
+        $('.grid').html(html);
     });
 
     function show(field){
@@ -38,24 +64,31 @@ $(document).ready(function(){
 
 class Solver{
 
-    constructor(field){
-        this.columnns = 6;
-        this.rows = 6;
+    constructor(field, cols, rows){
+        this.columnns = (cols === "")? 6 : cols;
+        this.rows = (rows === "")? 6 : rows;
         this.game = field;
-        this.copy = [[null, null, null, null, null, null],
-                    [null, null, null, null, null, null],
-                    [null, null, null, null, null, null],
-                    [null, null, null, null, null, null],
-                    [null, null, null, null, null, null],
-                    [null, null, null, null, null, null]];
+        this.copy = [];
         this.i = 0;
         this.solved = false;
+
+        this.setCopyNulls();
+    }
+
+    setCopyNulls(){
+        for(let i = 0; i < this.rows; i++){
+            this.copy.push([]);
+            for(let j = 0; j < this.columnns; j++){
+                this.copy[i].push(null);
+            }
+        }
     }
 
     solve(){
 
         this.solveGame();
-
+        console.log("Na solveSimple");
+        console.table(this.game);
         //this.createGameCopy();
         this.isValid();
         if(!this.solved){
@@ -128,6 +161,8 @@ class Solver{
             if(zerosCount > this.columnns / 2 || onesCount > this.columnns / 2){
                 console.log(`Rij ${i}`);
                 isValid = false;
+
+                console.log("Te veel per rij");
             }
         }
 
@@ -147,6 +182,31 @@ class Solver{
             if(zerosCount > this.rows / 2 || onesCount > this.rows / 2){
                 console.log(`Kolom ${i}`);
                 isValid = false;
+                console.log("Te veel per kolom");
+            }
+        }
+
+        //check meer dan 2 na elkaar in rij
+        for(let i = 0; i < this.rows; i++){
+            for(let j = 0; j < this.columnns - 2; j++){
+                if(this.game[i][j] === this.game[i][j+1] && this.game[i][j] != ""){
+                   if(this.game[i][j + 1] === this.game[i][j + 2]){
+                       isValid = false;
+                       console.log(`Meer dan 2 per rij, rij: ${i}`);
+                   }
+                }
+            }
+        }
+
+        //check meer dan 2 na elkaar in kolom
+        for(let i = 0; i < this.columnns; i++){
+            for(let j = 0; j < this.rows - 2; j++){
+                if(this.game[j][i] === this.game[j + 1][i] && this.game[j][i] != ""){
+                   if(this.game[j + 1][i] === this.game[j + 2][i]){
+                       isValid = false;
+                       console.log(`Meer dan 2 per kolom, kolom: ${j}`);
+                   }
+                }
             }
         }
 
@@ -155,8 +215,9 @@ class Solver{
         this.game.map(function(val, i){
             if(seen.hasOwnProperty(val)){
                 isValid = false;
-                console.log(seen);
-                console.info(`Index ${i}, dubbele rij`);
+                console.log("Dubbele rij");
+                //console.log(seen);
+                //console.info(`Index ${i}, dubbele rij`);
             }
             else{
                 seen[val] = i;
@@ -169,6 +230,7 @@ class Solver{
         test.reverse().map(function(val, i){
             if(seen.hasOwnProperty(val)){
                 isValid = false;
+                console.log("Dubbele kolom");
             }
             else{
                 seen[val] = i;
@@ -187,6 +249,8 @@ class Solver{
         // });
 
         //check lege velden
+
+        console.table(this.game);
         if(isValid){
             if(this.searchEmptyCell() == null){
                 this.solved = true;
@@ -202,19 +266,29 @@ class Solver{
                 this.copy[i][j] = this.game[i][j];
             }
         }
+
+        console.log("Created copy");
+        //console.table(this.copy);
     }
 
     revertGameGrid(){
+        console.log("Reverting game");
+        console.table(this.copy);
         for(let i = 0; i < this.rows; i++){
             for(let j = 0; j < this.columnns; j++){
                 this.game[i][j] = this.copy[i][j];
             }
         }
+
+        console.log("Revert game grid");
+        let test = this.game.slice();
+        //console.table(test);
     }
 
     makeGuess(value){
         let pair = this.searchEmptyCell();
-
+        
+        console.log(`Guessing op x: ${pair.x} en y: ${pair.y}`);
         this.game[pair.x][pair.y] = value;
     }
 
@@ -421,6 +495,7 @@ class Solver{
 
     searchEmptyCell(){
         let pair = null;
+        let valid = false;
 
         for(let i = 0; i < this.rows; i++){
             for(let j = 0; j < this.columnns; j++){
@@ -434,7 +509,7 @@ class Solver{
                 }
             }
         }
-
+        
         return pair;
     }
 }
